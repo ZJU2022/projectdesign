@@ -11,6 +11,8 @@ git --version
 node -v
 ```
 
+`package.json` 在 `frontend` 目录里。人已经站在 `projectdesign` 里时，要先 `cd frontend`，再 `npm install`。在仓库根目录直接装，会报找不到 `package.json`。
+
 ## 在自己电脑上跑
 
 ```bash
@@ -34,20 +36,25 @@ npm install
 npm run dev
 ```
 
-终端里出现 `Local: http://localhost:8082` 就说明已经跑起来了。这个地址只在云主机自己里面能打开。
+`npm run dev` 会一直占着这个终端，等浏览器来访问。窗口停在那里是正常的，不是卡住。这样退出 SSH 时，页面会一起停。
 
-人在自己的电脑上、通过 SSH 连着这台云主机时，在自己电脑另开一个终端，把云主机的 8082 接到自己电脑的 8082：
-
-```bash
-ssh -L 8082:127.0.0.1:8082 用户名@云主机地址
-```
-
-这条 SSH 保持不要关。然后在自己电脑的浏览器打开 http://127.0.0.1:8082
-
-想用云主机的公网地址直接打开时，启动要改成听所有网卡，云厂商的安全组放行 TCP 8082：
+要退出机器后还继续跑，先在当前窗口按 `Ctrl+C` 停掉这一次。确认人在 `frontend` 目录里，再执行：
 
 ```bash
-npm run dev -- --host 0.0.0.0
+setsid nohup npm run dev -- --host 0.0.0.0 > dev.log 2>&1 < /dev/null &
 ```
 
-浏览器打开 http://云主机公网IP:8082 。页面没有登录。不需要给别人看时，用上面的 SSH 转发即可。
+这条会把页面放到后台。`setsid` 让它脱离这次 SSH，退出登录也不会被关掉。输出写在 `frontend/dev.log`。看最后几行，出现 `Local` 或 `Network` 就说明起来了：
+
+```bash
+tail -n 20 dev.log
+```
+
+然后可以 `exit` 离开这台机器。安全组放行 TCP 8082 之后，浏览器打开 http://云主机IP:8082 。页面没有登录。
+
+以后要停掉后台这次：
+
+```bash
+pgrep -af vite
+kill 这里打印出来的PID
+```
